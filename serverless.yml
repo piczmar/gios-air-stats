@@ -1,0 +1,61 @@
+
+service: gios-air-stats
+
+provider:
+  name: aws
+  runtime: java8
+  environment:
+    DYNAMODB_TABLE: ${self:service}-${self:provider.stage}-data
+  profile: sls
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+  stage: dev
+  region: us-east-1
+
+package:
+  artifact: target/gios-air-stats-dev.jar
+
+functions:
+  giosStats:
+    handler: com.consulner.Handler
+#    memorySize: 512 # optional, in MB, default is 1024
+    timeout: 60 # optional, in seconds, default is 6
+    events:
+    # https://docs.aws.amazon.com/lambda/latest/dg/tutorial-scheduled-events-schedule-expressions.html
+      - schedule: rate(30 minutes)
+
+resources:
+  Resources:
+    StatsDynamoDbTable:
+      Type: AWS::DynamoDB::Table
+      DeletionPolicy: Retain
+      Properties:
+      # https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-dynamodb-table.html
+      # https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBMapper.DataTypes.html
+        AttributeDefinitions:
+          -
+            AttributeName: sensorName
+            AttributeType: S
+          -
+            AttributeName: timestamp
+            AttributeType: N
+        KeySchema:
+          -
+            AttributeName: sensorName
+            KeyType: HASH
+          -
+            AttributeName: timestamp
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:provider.environment.DYNAMODB_TABLE}
+
