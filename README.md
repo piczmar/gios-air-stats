@@ -1,6 +1,6 @@
 ## Serverless GIOS Stats
 Serverless scheduled task gathering statistic of earth quality in Lodz, Poland
-using [API](http://powietrze.gios.gov.pl/pjp/content/api) of CHIEF INSPECTORATE FOR ENVIRONMENTAL PROTECTION.
+using [API](http://powietrze.gios.gov.pl/pjp/content/api) of CHIEF INSPECTORATE FOR ENVIRONMENTAL PROTECTION (GIOS).
 
 API exposes data from sensors with 1h precision.
 

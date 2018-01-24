@@ -6,14 +6,9 @@ import com.consulner.service.gios.model.SensorData;
 import com.consulner.service.gios.model.SensorValue;
 import com.consulner.service.stats.dao.StatEntryDao;
 import com.consulner.service.stats.model.StatEntry;
-import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -41,6 +36,8 @@ public class StatsService {
 
     ZoneId zoneId = ZoneId.of("Europe/Paris");
 
+    LocalDateTime nowInPL = LocalDateTime.now(zoneId);
+
     GiosService service = new GiosService();
     Optional<List<Sensor>> sensors = service.getSensors(STATION_ID_LODZ);
 
@@ -50,28 +47,41 @@ public class StatsService {
 
     LOG.info("sensor ids: " + sensorIds);
 
-    LocalDateTime afterDate = LocalDateTime.now().minus(1, ChronoUnit.DAYS);
+//    LocalDateTime afterDate = LocalDateTime.now(zoneId).minus(1, ChronoUnit.DAYS);
 
     sensorIds.parallelStream().forEach(sensorId -> {
-      SensorData data = service.getSensorData(sensorId, Optional.of(afterDate)).get();
-      Optional<SensorValue> max = data.getValues().stream()
-          .max(Comparator.comparing(SensorValue::getDate));
-      if (max.isPresent()) {
-        SensorValue value = max.get();
-        LOG.info("Saving sensor: " + data.getKey() + ", at " + value.getDate() + " , value: " + value.getValue());
-        statEntryDao.put(
-            new StatEntry(data.getKey(), value.getDate().atZone(zoneId).toEpochSecond(),
-                value.getValue()));
+//      SensorData data = service.getSensorData(sensorId, Optional.of(afterDate)).get();
+      SensorData data = service.getSensorData(sensorId, Optional.empty()).get();
+//      Optional<SensorValue> max = data.getValues().stream()
+//          .max(Comparator.comparing(SensorValue::getDate));
+//      if (max.isPresent()) {
+//        SensorValue value = max.get();
+//        LOG.info("Saving sensor: " + data.getKey() + ", at " + value.getDate() + " , value: " + value.getValue());
+////        statEntryDao.put(
+////            new StatEntry(data.getKey(), value.getDate().atZone(zoneId).toEpochSecond(),
+////                value.getValue()));
+//      }
+
+      if (data.getValues() != null && !data.getValues().isEmpty()) {
+        SensorValue value = data.getValues().get(0);
+        LOG.info("Saving sensor: " + data.getKey() + ", at " + Optional.ofNullable(value).map(SensorValue::getDate).orElse(null) + " , value: " + value.getValue());
+//TODO: fix date correctness to be exact as in GIOS service, not +-30min
+        if (value.getValue() != null) {
+          statEntryDao.put(
+              new StatEntry(data.getKey(), nowInPL.atZone(zoneId).toEpochSecond(),
+                  value.getValue()));
+        }
+
+
       }
     });
-
   }
 
   public static void main(String[] args) {
     StatsService service = new StatsService();
 //    service.statEntryDao.put(new StatEntry("test", System.currentTimeMillis(), 11.1));
 
-//    service.updateStats();
+    service.updateStats();
   }
 
 }
