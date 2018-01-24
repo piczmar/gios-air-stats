@@ -7,3 +7,20 @@ API exposes data from sensors with 1h precision.
 AWS Lambda scheduled function runs every 30min and gathers last available data.
 
 Values of available sensors (e.g.: NO2, PM10, CO, C6H6) are stored in DynamoDB.
+
+
+### Build and deploy
+
+```
+cd client
+npm install
+npm run build
+cd ..
+sls deploy
+sls client deploy
+```
+
+to remove client web:
+```
+sls client remove
+```

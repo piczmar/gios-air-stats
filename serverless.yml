@@ -59,3 +59,11 @@ resources:
           WriteCapacityUnits: 1
         TableName: ${self:provider.environment.DYNAMODB_TABLE}
 
+plugins:
+  - serverless-finch
+
+custom:
+  client:
+    bucketName: ${self:service}-${self:provider.stage}-website
+    distributionFolder: client/build
+
